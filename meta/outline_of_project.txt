@@ -1,0 +1,32 @@
+Sociophonetic variation in Afrikaans vowel production [DH/DS]
+In this project, students will analyze a dataset consisting of acoustic features of vowels (first
+and second formant) that have been produced by white and colored speakers of Afrikaans, a
+Germanic language that is spoken (mainly) in South Africa. The data have been recorded
+using two different methods (word lists vs. speech in context) by Daan Wissing (North West
+University, Potchefstroom, South Africa). Acoustic features have been already extracted for
+all configurations. The goal of the project is to compare the different configurations to assess
+(a) whether the examined sociolinguistic variants of Afrikaans differ from each other and (b)
+to what extent results based on different methodologies match.
+Some context:
+Wissing, D., Baumann, A., &amp; Pienaar, W. (2023). Die vokaalruimtes van Bruinafrikaanse
+variëteite. Litnet Akademies:&#39;n Joernaal vir die Geesteswetenskappe, Natuurwetenskappe,
+Regte en Godsdienswetenskappe, 20(3), 127-146.
+https://www.litnet.co.za/die-vokaalruimtes-van-bruinafrikaanse-varieteite/
+Data:
+ A: coloured Afrikaans, reading
+ B: white Afrikaans, reading
+ C: coloured Afrikaans, word list
+ D: white Afrikaans, word list
+Task:
+1. Main questions:
+a. Sociolinguistic differences: A vs. B &amp; C vs. D
+b. Methodological differences: A vs. C &amp; C vs. D
+2. Visualize each of the four vowel spaces A-D (F1 &amp; F2); do this more beautifully than
+in the paper above!
+3. Think of a neat way of comparing two vowel spaces (something along the lines of
+Wissing et al. 2023, or, even better, something different)
+a. How can one measure the distance (effect size) between two vowel spaces?
+b. How can one quantify to what extent vowel realizations are more dispersed
+on one of the two vowel spaces?
+c. Howe can one measure which vowel contributes most to the distance
+between two vowel spaces, i.e., which vowel is most impactful?
