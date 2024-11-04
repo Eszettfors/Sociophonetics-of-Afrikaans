@@ -1,0 +1,52 @@
+
+Fragen für Südafrika
+------
+Wann und unter welchen Umständen haben die Aufnahmen stattgefunden?
+
+Are the speakers from the same area?
+
+Do we know anything about the age and gender of B?
+
+Is the C dataset the same as in previous paper? Distribution looks the same.
+
+Were the formants extracted in the same way as in previous paper?
+
+Are the F1 and F2 values for diphthongs calculated as averages?
+
+Fragen für Baumann
+-----
+How to handle missing age/gender values?
+
+Do we treat diphthongs as monophthongs like in the paper?
+
+Different number of vowel recording per speaker, how to go about?
+
+How do we handle outliers?
+
+Very unbalanced data set in the number of data points for different vowels, and some only covering a few vowels
+Since D only contain female speakers -> reduce the analysis to only account for women?
+
+Dataset A is problematic due to frontvowel being from other speakers than the back vowels.
+Daan claims that the readers are the same for the coloured speakers, but that can't be right, since the data
+is so different. 
+
+Mean of dataset be is much lower than in the other datasets, what could be the reason?
+
+What is normal variations in f1 and f2 for the same vowel for one speaker? See dataframe B for example
+
+Thoughts
+-----
+
+The words in the reading are not the same as the wordlists.
+
+To be able to say something about the difference in methodology, you would need to have the same person do both reading and
+wordlist to compare. 
+
+Original paper concluded that age and gender only have a small effect -> is not important.
+
+
+### most important points:
+Dataset A is of such low quality(different speakers, not all vowels covered, not all readings(as B) disparity in vowel recordings) that an Analysis can't really say anything:
+Possible solution: Only look at back vowels: 87 speakers with full coverage and compare with backvowels in B and C. 
+
+remove speakers which only have a few vowels recorded -> make the datasets more equal. 

@@ -36,6 +36,7 @@ unique(A$Vowel)
 A_speakers = A %>% group_by(Speaker) %>% summarise(Mean_F1 = mean(F1), Mean_F2 = mean(F2), n_vowels = as.numeric(length(unique(Vowel))), Gender = unique(Gender), Age = unique(Age))
 table(A_speakers$Gender) # 252 f vs 152 m
 table(A_speakers$n_vowels) #no indivudal covers the entire vowelspace
+barplot(table(A_speakers$n_vowels))
 boxplot(A_speakers$Age) # median approx 33, 2nd and 3d quartile 20 - 50
 #age contains NA
 
@@ -57,14 +58,13 @@ t.test(A$F2[A$Gender == 'f'], A$F2[A$Gender == 'm']) #p>0.001
 
 #summary per vowel
 Vowels_A = A %>% group_by(Vowel) %>% summarise(n_recordings = n(), n_speakers = length(unique(Speaker)), Mean_F1= mean(F1),Mean_F2 =  mean(F2))
-View(Vowels_A)
 # unproportional number of recordings for the schwa: 16060
 table(Vowels_A$Vowel,Vowels_A$n_speakers)
 # three vowels were only pronounced by 87 speakers, why? (back vowels) - ɔ, o, u
 # dataset B only contain 87 speakers -> do the 87 in this dataset contain all vowels?
 back_vowel_speakers = unique(A$Speaker[A$Vowel %in% c("ɔ","o", "u")])
 Vowels_A_sub = A %>% group_by(Vowel) %>% filter(Speaker %in% back_vowel_speakers) %>% summarise(n_recordings = n(), n_speakers = length(unique(Speaker)), Mean_F1= mean(F1),Mean_F2 =  mean(F2)) 
-View(Vowels_A_sub)#the recordings of back vowel belong to speakers which do not pronounce the front vowel and vise versa -> low quality since front and back vowel formants inherently are different
+#the recordings of back vowel belong to speakers which do not pronounce the front vowel and vise versa -> low quality since front and back vowel formants inherently are different
 
 
 ggplot(data = Vowels_A %>% pivot_longer(cols = c(Mean_F1, Mean_F2), names_to = "Formants", values_to = "Frequency"),
@@ -194,7 +194,7 @@ ggplot(data = C_speakers %>% pivot_longer(cols = c(Mean_F1, Mean_F2), names_to =
 #summary per vowel
 Vowels_C = C %>% group_by(Vowel) %>% summarise(n_recordings = n(),n_speakers = length(unique(Speaker)), Mean_F1= mean(F1),Mean_F2 =  mean(F2)) 
 table(Vowels_C$Vowel, Vowels_C$n_speakers)
-View(Vowels_C)#almost all vowels covered by all speakers ; almost only one recording per speaker per vowel
+#almost all vowels covered by all speakers ; almost only one recording per speaker per vowel
 
 ggplot(data = Vowels_C %>% pivot_longer(cols = c(Mean_F1, Mean_F2), names_to = "Formants", values_to = "Frequency"),
        map = aes(y = Frequency, x = Vowel, fill = Formants, colour = Formants)) + geom_bar(stat = 'identity', position = 'dodge')
@@ -306,14 +306,6 @@ sum_abcd = abcd %>% group_by(Set) %>% summarize(n_instances = n(), n_speakers = 
 head(sum_abcd)
 #The mean F2 of Dataset B is much lower than the other datasets, why???
 
-#are the readings in A and B the same?
-table(unique(A$Word) %in% unique(B$Word)) #All words in A are present in B
-table(unique(B$Word) %in% unique(A$Word)) #5 words in B are not present in A
-
-#are the word lists in C and D the same?
-table(unique(C$Word) %in% unique(D$Word)) #True
-table(unique(D$Word) %in% unique(C$Word)) #True
-
 #comparing distributions across datasets
 ggplot(data = abcd,
        map = aes(y = F1, x = Vowel, fill = Set, color = Set)) +geom_boxplot(color = "black") + labs(title = "distribution of F1 across all datasets")
@@ -326,13 +318,10 @@ ggplot(data = abcd %>% filter(F1_norm < 3 & F1_norm > -3 ),
   geom_text(data = abcd %>% group_by(Set) %>% summarize(F1 = mean(F1), F2 = mean(F2)), aes(y = F1, x = F2, label=Set),alpha = 1, size = 10, fontface = "bold") +
   scale_y_reverse() + scale_x_reverse() + labs(title = 'Vowel space of A, B, C and D in Hz') + theme(legend.position = "none")
 
-
 ggplot(data = abcd %>% filter(F1_norm < 3 & F1_norm > -3 ),
-       map = aes(y = F1_norm, x = F2_norm, fill = Set, colour = Set)) + geom_point(alpha = 0.01) + stat_ellipse() + 
+      map = aes(y = F1_norm, x = F2_norm, fill = Set, colour = Set)) + geom_point(alpha = 0.01) + stat_ellipse() + 
       geom_text(data = abcd %>% group_by(Set) %>% summarize(F1 = mean(F1_norm), F2 = mean(F2_norm)), aes(y = F1, x = F2, label=Set),alpha = 1, size = 10, fontface = "bold") +
       scale_y_reverse() + scale_x_reverse() + labs(title = 'Vowel space of A, B, C and D normalized') + theme(legend.position = "none")
 
-
-### remove speakers from B and C which do not cover the entire vocabulary. By A only look at back vowel
 
 
