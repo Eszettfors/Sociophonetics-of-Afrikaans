@@ -3,7 +3,9 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(DescTools)
-library(VennDiagram)
+library(gt)
+library(xtable)
+
 
 A = read_excel("data/A. BA Noordewinde.xlsx")
 B = read_excel("data/B. WIT Noordewinde.xlsx")
@@ -16,27 +18,43 @@ ipa_key = read.csv("data/transcription.csv", sep = "\t")
 colnames(A) = c("Group", "Speaker", "Vowel", "Word", "F1", "F2")
 nrow(A) #39661 data points
 
-speakers_A = unique(A$Speaker) 
+speakers_A = unique(A$Speaker)
 length(speakers_A) #404 unique speakers
 ID = 1:length(speakers_A)
 key_speakers_A = data.frame(ID, speakers_A) # 1-316, gender indicated by first letter1-118 male, 119-316 female, 317 - 349 are male, 350 - 403 are female, 404 is male; all ranges are inclusive
-key_speakers_A = key_speakers_A %>% mutate(Gender = case_when(ID < 119 ~ "m", ID > 118 & ID < 317 ~'f', ID >316 & ID <350 ~ "m", ID>349 & ID != 404 ~'f', ID == 404 ~'m')) # creates a gender data frame
+key_speakers_A = key_speakers_A %>% mutate(
+  Gender = case_when(
+    ID < 119 ~ "m",
+    ID > 118 &
+      ID < 317 ~ 'f',
+    ID > 316 &
+      ID < 350 ~ "m",
+    ID > 349 &
+      ID != 404 ~ 'f',
+    ID == 404 ~ 'm'
+  )
+) # creates a gender data frame
 key_speakers_A = key_speakers_A %>% mutate(Age = str_extract(speakers_A, "\\d+")) #extracts number from every speaker, if there is no number to extract, returns NA
-key_speakers_A$ Age = as.numeric(key_speakers_A$Age)
+key_speakers_A$Age = as.numeric(key_speakers_A$Age)
 #192-202, number does not indicate age -> NA ; 12, wrong number extracted -> adjust
 key_speakers_A[192:202, c("Age")] = NA
 key_speakers_A[12, c("Age")] = 19
-table(is.na(key_speakers_A$Age)) #Age missing for 69 speakers. 
+table(is.na(key_speakers_A$Age)) #Age missing for 69 speakers.
 
-A = merge(A, key_speakers_A %>% select(!ID), by.x = "Speaker", by.y = "speakers_A") #Merge A on speaker
+A = merge(A,
+          key_speakers_A %>% select(!ID),
+          by.x = "Speaker",
+          by.y = "speakers_A") #Merge A on speaker
 A = A %>% mutate(Group = "Coloured") #change bruin to coloured
 
+recordings_per_vowel_per_speaker = A %>% group_by(Speaker, Vowel) %>% summarize(n = n())
+Desc(recordings_per_vowel_per_speaker$n)
 
 nrow(A) #39661 data points, nothing lost
 
 ### B - Whites reading
 colnames(B) = c("Group", "Speaker", "Vowel", "Word", "F1", "F2")
-B = B[-1,] # remove row with columns
+B = B[-1, ] # remove row with columns
 nrow(B) # 20176 data points
 B$F1 = as.numeric(B$F1)
 B$F2 = as.numeric(B$F2) # make formants numeric
@@ -50,12 +68,15 @@ B$Age = NA
 B = B %>% mutate(Group = "White")
 nrow(B) #20176 data points, no dataloss
 
+recordings_per_vowel_per_speaker = B %>% group_by(Speaker, Vowel) %>% summarize(n = n())
+Desc(recordings_per_vowel_per_speaker$n)
+
 ### C - coloured reading
 
 colnames(C) = c("Group", "Speaker", "Vowel", "Word", "F1", "F2")
 nrow(C) #4771 data points
 
-speakers_C = unique(C$Speaker) 
+speakers_C = unique(C$Speaker)
 length(speakers_C) #650 unique speakers ??? unlikely with so few data points, might be doublets
 ID = 1:length(speakers_C)
 key_speakers_C = data.frame(ID, speakers_C) #doublets present, e.g. 25_M_Christiana_82_Vr_Woordely is the same as 25MChristiana82VrWoordelys
@@ -73,12 +94,12 @@ C = C %>% mutate(Speaker = Speaker %>% str_replace_all("_", ""))
 # remove first letter
 C = C %>% mutate(Speaker = Speaker %>% str_replace("^\\d+", ""))
 
-# remove wordelys/lys 
+# remove wordelys/lys
 C = C %>% mutate(Speaker = Speaker %>% str_replace("Woordelys.*", ""))
 C = C %>% mutate(Speaker = Speaker %>% str_replace("lys.*", ""))
 
 length(unique(C$Speaker)) #336 speakers left
-speakers_C = unique(C$Speaker) 
+speakers_C = unique(C$Speaker)
 ID = 1:length(speakers_C)
 key_speakers_C = data.frame(ID, speakers_C)
 
@@ -91,26 +112,52 @@ key_speakers_C$Age[250:258] = rep(NA, length(key_speakers_C$Age[250:258]))
 key_speakers_C = key_speakers_C %>% mutate(Gender = speakers_C %>% str_extract("(ml|Ml|ML|vr|Vr|VR|(?<=\\d)[mv])"))
 
 #manual extraction of gender based on name, 218 could be male or female
-ms = c(88, 98,99,113, 129, 173, 193,206,207,264,267, 289, 291, 304, 311, 327)
+ms = c(88,
+       98,
+       99,
+       113,
+       129,
+       173,
+       193,
+       206,
+       207,
+       264,
+       267,
+       289,
+       291,
+       304,
+       311,
+       327)
 vs = c(75)
 
-key_speakers_C = key_speakers_C %>% 
-        mutate(Gender = case_when(
-                      ID %in% ms ~"m",
-                      ID %in% vs ~"f",
-                      Gender == "ml" | Gender == "Ml" | Gender == "Ml" | Gender == "m" ~ "m",
-                      Gender == "vr" | Gender == "Vr" | Gender == "VR" | Gender == "v" ~ "f"))
+key_speakers_C = key_speakers_C %>%
+  mutate(
+    Gender = case_when(
+      ID %in% ms ~ "m",
+      ID %in% vs ~ "f",
+      Gender == "ml" |
+        Gender == "Ml" | Gender == "Ml" | Gender == "m" ~ "m",
+      Gender == "vr" |
+        Gender == "Vr" | Gender == "VR" | Gender == "v" ~ "f"
+    )
+  )
 
 key_speakers_C$Age = as.numeric(key_speakers_C$Age)
 length(unique(key_speakers_C$speakers_C)) # 336 unique speakers
 table(is.na(key_speakers_C$Age)) # missing age values for 66 speakers
 table(is.na(key_speakers_C$Gender)) #missing gender values for 3 speakers
 
-C = merge(C, key_speakers_C %>% select(!ID), by.x = "Speaker", by.y = "speakers_C") #Merge A on speaker
+C = merge(C,
+          key_speakers_C %>% select(!ID),
+          by.x = "Speaker",
+          by.y = "speakers_C") #Merge A on speaker
 C = C %>% mutate(Group = "Coloured") #change bruin to coloured
 
 
 nrow(C) #4771 data points, nothing lost
+
+recordings_per_vowel_per_speaker = C %>% group_by(Speaker, Vowel) %>% summarize(n = n())
+Desc(recordings_per_vowel_per_speaker$n)
 
 ### D - white wordlist
 
@@ -128,6 +175,10 @@ D = D %>% mutate(Group = "White")
 
 nrow(D) #265 data points, no dataloss
 
+D %>% group_by(Speaker) %>% summarise(vowels = length(unique(Vowel)))
+
+recordings_per_vowel_per_speaker = D %>% group_by(Speaker, Vowel) %>% summarize(n = n())
+Desc(recordings_per_vowel_per_speaker$n)
 
 #### IPA
 unique(A$Vowel) %in% unique(ipa_key$vowel_trans)
@@ -138,7 +189,11 @@ A[A$Vowel == "ø", "Vowel"] = "eu"
 
 A = merge(A, ipa_key, by.x = "Vowel", by.y = "vowel_trans") # merge with ipa_keys and replace to get vowels
 A$Vowel = NULL
-A = A %>% rename(c(Vowel = vowel, Example = example, Type = type)) #change column names according to convention
+A = A %>% rename(c(
+  Vowel = vowel,
+  Example = example,
+  Type = type
+)) #change column names according to convention
 
 unique(B$Vowel)
 unique(ipa_key$vowel_trans)
@@ -146,42 +201,55 @@ unique(B$Vowel) %in% unique(ipa_key$vowel_trans) # æ and ø not present in ipa_
 B %>% filter(Vowel == "æ")
 odd_letter = B %>% filter(Vowel == "æ")
 unique(odd_letter$Word)# "erken"    "lekker"   "regkry"   "sterkste" "trek"     "uittrek"  "werd"
-A[A$Word == "trek", ] # represented by /ɛ/ = E in the first data frame -> make unison
+A[A$Word == "trek",] # represented by /ɛ/ = E in the first data frame -> make unison
 B$Vowel[B$Vowel == "æ"] = "E"
 B$Vowel[B$Vowel == "ø"] = "eu"
 
 
 B = merge(B, ipa_key, by.x = "Vowel", by.y = "vowel_trans") #change to IPA symbols
 B$Vowel = NULL
-B = B %>% rename(c(Vowel = vowel, Example = example, Type = type)) #change column names according to convention
+B = B %>% rename(c(
+  Vowel = vowel,
+  Example = example,
+  Type = type
+)) #change column names according to convention
 
 unique(C$Vowel) %in% unique(ipa_key$vowel_trans) # all vowels present in key
 C = merge(C, ipa_key, by.x = "Vowel", by.y = "vowel_trans") # merge with ipa_keys and replace to get vowels
 C$Vowel = NULL
-C = C %>% rename(c(Vowel = vowel, Example = example, Type = type)) #change column names according to convention
+C = C %>% rename(c(
+  Vowel = vowel,
+  Example = example,
+  Type = type
+)) #change column names according to convention
 
 unique(D$Vowel)
 unique(D$Vowel) %in% unique(ipa_key$vowel_trans) # all vowels present
 
 D = merge(D, ipa_key, by.x = "Vowel", by.y = "vowel_trans") #change to IPA symbols
 D$Vowel = NULL
-D = D %>% rename(c(Vowel = vowel, Example = example, Type = type)) #change column names according to convention
+D = D %>% rename(c(
+  Vowel = vowel,
+  Example = example,
+  Type = type
+)) #change column names according to convention
 
 unique(ipa_key$vowel)
 length(unique(ipa_key$vowel)) #16 unique vowels
 length(unique(A$Vowel)) #14 vowels
 length(unique(B$Vowel)) #15 vowels
 length(unique(C$Vowel)) #15 vowels
-length(unique(C$Vowel)) #15 vowels
+length(unique(D$Vowel)) #15 vowels
 
 #what is missing from the ipa_key?
 unique(ipa_key$vowel) %in% unique(A$Vowel) #"œ", "æ" # missing "bus", but present in B,C and D?
 unique(ipa_key$vowel) %in% unique(C$Vowel) #æ missing æ = ek(not present the data set and also not in previous study)
 
 wds = unique(B$Word[B$Vowel == 'œ'])
-A$Vowel[A$Word %in% wds]
-B$Vowel[B$Word %in% wds]
-
+unique(A$Vowel[A$Word %in% wds])
+unique(B$Vowel[B$Word %in% wds])
+unique(A$Example[A$Word %in% wds])
+unique(B$Example[B$Word %in% wds])
 missing_vowel_A = A %>% filter(Word %in%  wds) %>% summarize(word = unique(Word), vowel = unique(Vowel))
 missing_vowel_B = B %>% filter(Word %in%  wds) %>% summarize(word = unique(Word), vowel = unique(Vowel))
 #the white speakers have 'œ', 'u' and 'ə' , while the coloured have 'ə'
@@ -194,7 +262,7 @@ B$Method = "Reading"
 C$Method = "Wordlist"
 D$Method = "Wordlist"
 
-A_W = unique(A$Word) 
+A_W = unique(A$Word)
 B_W = unique(B$Word)
 C_W = unique(C$Word)
 D_W = unique(D$Word)
@@ -217,42 +285,196 @@ not_in_reading = B_W[!B_W %in% nws] # where did these words come from?
 B %>% filter(!Word %in% not_in_reading) %>% summarise(vowels = length(unique(Vowel)))
 A %>% filter(!Word %in% not_in_reading) %>% summarise(vowels = length(unique(Vowel))) #only removing "beurt" reduces the size of the vowel space
 
+#remove words except "beurt" which are not in not in NWAS, as to note reduce the vowel space
+words_to_remove = not_in_reading[not_in_reading != "beurt"]
+B = B %>% filter(!Word %in% words_to_remove)
+A = A %>% filter(!Word %in% words_to_remove)
+
 #arrange columns
-A = A %>% select(c("Speaker","Group","Method", "Gender", "Age", "Word", "Vowel", "Example", "Type", "F1", "F2" ))
-B = B %>% select(c("Speaker","Group","Method", "Gender", "Age", "Word", "Vowel", "Example", "Type", "F1", "F2" ))
-C = C %>% select(c("Speaker","Group","Method", "Gender", "Age", "Word", "Vowel", "Example", "Type", "F1", "F2" ))
-D = D %>% select(c("Speaker","Group","Method", "Gender", "Age", "Word", "Vowel", "Example", "Type", "F1", "F2" ))
+A = A %>% select(
+  c(
+    "Speaker",
+    "Group",
+    "Method",
+    "Gender",
+    "Age",
+    "Word",
+    "Vowel",
+    "Example",
+    "Type",
+    "F1",
+    "F2"
+  )
+)
+B = B %>% select(
+  c(
+    "Speaker",
+    "Group",
+    "Method",
+    "Gender",
+    "Age",
+    "Word",
+    "Vowel",
+    "Example",
+    "Type",
+    "F1",
+    "F2"
+  )
+)
+C = C %>% select(
+  c(
+    "Speaker",
+    "Group",
+    "Method",
+    "Gender",
+    "Age",
+    "Word",
+    "Vowel",
+    "Example",
+    "Type",
+    "F1",
+    "F2"
+  )
+)
+D = D %>% select(
+  c(
+    "Speaker",
+    "Group",
+    "Method",
+    "Gender",
+    "Age",
+    "Word",
+    "Vowel",
+    "Example",
+    "Type",
+    "F1",
+    "F2"
+  )
+)
 
 #check NA in target variable(F1, F2)
-A[is.na(A$F1),] #some NAs
-A[is.na(A$F2),] #some NAs
+A[is.na(A$F1), ] #some NAs
+A[is.na(A$F2), ] #some NAs
 
-B[is.na(B$F1),] #ok
-B[is.na(B$F2),] #ok
+B[is.na(B$F1), ] #ok
+B[is.na(B$F2), ] #ok
 
-C[is.na(C$F1),] #ok
-C[is.na(C$F2),] #ok
+C[is.na(C$F1), ] #ok
+C[is.na(C$F2), ] #ok
 
-D[is.na(D$F1),] #ok
-D[is.na(D$F2),] #ok
+D[is.na(D$F1), ] #ok
+D[is.na(D$F2), ] #ok
 
 #the Nas were missing in the source data, not lost during cleaning -> remove
-A = A[!is.na(A$F1),]
+A = A[!is.na(A$F1), ]
 
+
+#number of speakers per vowel
+A %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
+B %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
+C %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
+D %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
+
+#number of vowels per speaker
+A_speakers = A %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
+table(A_speakers$n_vowels)
+B_speakers = B %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
+table(B_speakers$n_vowels)
+C_speakers = C %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
+table(C_speakers$n_vowels)
+D_speakers = D %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
+table(D_speakers$n_vowels)
+
+Vowels_A = A %>% group_by(Vowel) %>% summarise(n_recordings = n(), n_speakers = length(unique(Speaker)))
+table(Vowels_A$Vowel, Vowels_A$n_speakers)
+# three vowels were only pronounced by 87 speakers, why? (back vowels) - ɔ, o, u
+back_vowel_speakers = unique(A$Speaker[A$Vowel %in% c("ɔ", "o", "u")])
+Vowels_A_sub = A %>% group_by(Vowel) %>% filter(Speaker %in% back_vowel_speakers) %>% summarise(
+  n_recordings = n(),
+  n_speakers = length(unique(Speaker)),
+  Mean_F1 = mean(F1),
+  Mean_F2 =  mean(F2)
+)
+head(Vowels_A_sub) # the speakers covering the back vowels, only cover these vowels and no other.
+
+#remove Speakers which do not cover at least 14 or 15 vowels, in the case of A, keep the speakers covering 11 and 3
+n_vowels_A = A %>% group_by(Speaker) %>% summarize(n_vowel = length(unique(Vowel)))
+good_coverage = n_vowels_A$Speaker[n_vowels_A$n_vowel == 11 |
+                                     n_vowels_A$n_vowel == 3]
+A = A %>% filter(Speaker %in% good_coverage)
+
+n_vowels_B = B %>% group_by(Speaker) %>% summarize(n_vowel = length(unique(Vowel)))
+good_coverage = n_vowels_B$Speaker[n_vowels_B$n_vowel > 13]
+B = B %>% filter(Speaker %in% good_coverage)
+
+n_vowels_C = C %>% group_by(Speaker) %>% summarize(n_vowel = length(unique(Vowel)))
+good_coverage = n_vowels_C$Speaker[n_vowels_C$n_vowel > 13]
+C = C %>% filter(Speaker %in% good_coverage)
+
+n_vowels_D = D %>% group_by(Speaker) %>% summarize(n_vowel = length(unique(Vowel)))
+good_coverage = n_vowels_D$Speaker[n_vowels_D$n_vowel > 13]
+D = D %>% filter(Speaker %in% good_coverage)
+
+length(unique(A$Speaker))#387
+length(unique(B$Speaker))#82
+length(unique(C$Speaker))#220
+length(unique(D$Speaker))#9
+
+
+#The datasets have multiple recordings per vowel per speaker -> could create problems with dependency of observations and outliers
+#by taking the median for each vowel for each speaker, this is addressed which should increase the quality of the data.
+Vowels_A = A %>% group_by(Vowel) %>% summarise(
+  n_recordings = n(),
+  n_speakers = length(unique(Speaker)),
+  Mean_F1 = mean(F1),
+  Mean_F2 =  mean(F2)
+)
+head(Vowels_A) #
+Vowels_B = B %>% group_by(Vowel) %>% summarise(
+  n_recordings = n(),
+  n_speakers = length(unique(Speaker)),
+  Mean_F1 = mean(F1),
+  Mean_F2 =  mean(F2)
+)
+head(Vowels_B)
+Vowels_C = C %>% group_by(Vowel) %>% summarise(
+  n_recordings = n(),
+  n_speakers = length(unique(Speaker)),
+  Mean_F1 = mean(F1),
+  Mean_F2 =  mean(F2)
+)
+head(Vowels_C)
+Vowels_D = D %>% group_by(Vowel) %>% summarise(
+  n_recordings = n(),
+  n_speakers = length(unique(Speaker)),
+  Mean_F1 = mean(F1),
+  Mean_F2 =  mean(F2)
+)
+head(Vowels_C)
+
+A = A %>% group_by(Speaker, Group, Method, Vowel, Example, Type) %>% summarize(F1 = median(F1), F2 = median(F2))
+B = B %>% group_by(Speaker, Group, Method, Vowel, Example, Type) %>% summarize(F1 = median(F1), F2 = median(F2))
+C = C %>% group_by(Speaker, Group, Method, Vowel, Example, Type) %>% summarize(F1 = median(F1), F2 = median(F2))
+D = D %>% group_by(Speaker, Group, Method, Vowel, Example, Type) %>% summarize(F1 = median(F1), F2 = median(F2))
+A = as.data.frame(A)
+B = as.data.frame(B)
+C = as.data.frame(C)
+D = as.data.frame(D)
 
 ##adding normalization
 
-lobanov = function(df, formant){
+lobanov = function(df, formant) {
   lobanovs = c()
-  for (i in 1:nrow(df)){
+  for (i in 1:nrow(df)) {
     speaker = df[i, "Speaker"]
     speaker_mean = mean(df[df$Speaker == speaker, formant])
     speaker_sd = SD(df[df$Speaker == speaker, formant])
-    norm = (df[i, formant] - speaker_mean)/speaker_sd
+    norm = (df[i, formant] - speaker_mean) / speaker_sd
     lobanovs = c(lobanovs, norm)
   }
   return(lobanovs)
 }
+
 A$F1_norm = lobanov(A, "F1")
 A$F2_norm = lobanov(A, "F2")
 
@@ -268,39 +490,30 @@ D$F2_norm = lobanov(D, "F2")
 
 
 #check NA in target variable(F1_norm, F2_norm)
-A[is.na(A$F1_norm),] #ok
-A[is.na(A$F2_norm),] #ok
+A[is.na(A$F1_norm), ] #ok
+A[is.na(A$F2_norm), ] #ok
 
-B[is.na(B$F1_norm),] #2 na
-B[is.na(B$F2_norm),] #2 na
+B[is.na(B$F1_norm), ] #ok
+B[is.na(B$F2_norm), ] #ok
 
-C[is.na(C$F1_norm),] #2 na
-C[is.na(C$F2_norm),] #2 na
+C[is.na(C$F1_norm), ] #na
+C[is.na(C$F2_norm), ] #na
 
-D[is.na(D$F1_norm),] #ok
-D[is.na(D$F2_norm),] #ok
+D[is.na(D$F1_norm), ] #ok
+D[is.na(D$F2_norm), ] #ok
 
-na_speakers_B = B$Speaker[is.na(B$F1_norm)]
-B[B$Speaker == na_speakers_B,] #only one entry -> SD = 0 -> NA when normalizing
-### exclude speakers from the analysis which do not cover enough vowels?
 
-A %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
-B %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
-C %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
-D %>% group_by(Vowel) %>% summarize(n_speakers = length(unique(Speaker)))
+#tag the datasets with their label to allow for binding
+A$Set = "A"
+B$Set = "B"
+C$Set = "C"
+D$Set = "D"
 
-A_speakers = A %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
-table(A_speakers$n_vowels)
-B_speakers = B %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
-table(B_speakers$n_vowels)
-C_speakers = C %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
-table(C_speakers$n_vowels)
-D_speakers = D %>% group_by(Speaker) %>% summarize(n_vowels = length(unique(Vowel)))
-table(D_speakers$n_vowels)
+#export
+write.csv(A, "clean_data/A_clean", row.names = FALSE)
+write.csv(B, "clean_data/B_clean", row.names = FALSE)
+write.csv(C, "clean_data/C_clean", row.names = FALSE)
+write.csv(D, "clean_data/D_clean", row.names = FALSE)
 
-write.csv(A,"clean_data/A_clean", row.names = FALSE)
-write.csv(B,"clean_data/B_clean", row.names = FALSE)
-write.csv(C,"clean_data/C_clean", row.names = FALSE)
-write.csv(D,"clean_data/D_clean", row.names = FALSE)
 
 
