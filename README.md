@@ -2,4 +2,4 @@ This code base was developed to hold the code written for the Data Analysis Proj
 
 In the project, we compare the vowelspace between two sociophonetic groups quantitatively and deploy a new measure using cliff's Delta. For an overview, please see the poster.
 
-![poster](https://github.com/Eszettfors/Sociophonetics-of-Afrikaans/blob/main/Afrikaans_poster.pdf)
+![poster](https://github.com/Eszettfors/Sociophonetics-of-Afrikaans/blob/main/Afrikaans_poster.png)
